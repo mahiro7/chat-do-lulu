@@ -22,7 +22,7 @@ ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 FROM ${BUILDER_IMAGE} as builder
 
 # install build dependencies
-RUN apt-get update -y && apt-get install -y build-essential git \
+RUN apt-get update -y && apt-get install -y build-essential git inotify-tools ca-certificates \
     && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # prepare build dir
@@ -33,7 +33,7 @@ RUN mix local.hex --force && \
     mix local.rebar --force
 
 # set build ENV
-ENV MIX_ENV="prod"
+ENV MIX_ENV="dev"
 
 # install mix dependencies
 COPY mix.exs mix.lock ./
@@ -68,7 +68,7 @@ RUN mix release
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE}
 
-RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales \
+RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales inotify-tools ca-certificates \
   && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # Set the locale
@@ -82,7 +82,7 @@ WORKDIR "/app"
 RUN chown nobody /app
 
 # set runner ENV
-ENV MIX_ENV="prod"
+ENV MIX_ENV="dev"
 
 # Only copy the final release from the build stage
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/chat ./
@@ -91,5 +91,5 @@ USER nobody
 
 CMD ["/app/bin/server"]
 # Appended by flyctl
-ENV ECTO_IPV6 true
-ENV ERL_AFLAGS "-proto_dist inet6_tcp"
+# ENV ECTO_IPV6 true
+# ENV ERL_AFLAGS "-proto_dist inet6_tcp"

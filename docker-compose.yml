@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Serviço para o PostgreSQL
+  db:
+    image: postgres:15-alpine # Use uma imagem oficial do PostgreSQL
+    restart: always
+    environment:
+      POSTGRES_DB: chat_db         # Nome do seu banco de dados
+      POSTGRES_USER: postgres      # Usuário do banco de dados
+      POSTGRES_PASSWORD: password  # Senha do banco de dados (mude para algo seguro em produção!)
+    ports:
+      - "5432:5432" # Opcional: expõe a porta do DB para seu host (para acessar de fora, se precisar)
+    volumes:
+      - db_data:/var/lib/postgresql/data # Persiste os dados do banco de dados
+
+  # Serviço para sua aplicação Elixir/Phoenix
+  app:
+    build:
+      context: . # Onde o Dockerfile da aplicação está (diretório atual)
+      dockerfile: Dockerfile # O nome do seu Dockerfile
+    restart: always
+    environment:
+      # Use o nome do serviço 'db' como host para o DATABASE_URL
+      DATABASE_URL: postgresql://postgres:password@db/chat_db
+      PORT: 4000 # Porta que seu Phoenix escuta dentro do contêiner
+    ports:
+      - "4000:4000" # Mapeia a porta 4001 do contêiner para a 4000 do host
+    depends_on:
+      - db # Garante que o DB inicie antes do app (ou tente iniciar)
+
+volumes:
+  db_data: # Define o volume para persistência dos dados do DB
